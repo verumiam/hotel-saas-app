@@ -1,0 +1,15 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+main,
+body,
+:root {
+  height: 100%;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.swiper-pagination-bullet {
+  background-color: #c62828 !important;
+}
