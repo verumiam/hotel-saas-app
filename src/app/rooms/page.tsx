@@ -4,7 +4,7 @@ import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFnsV3';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { TextField, Typography } from '@mui/material';
-import { Container, Button, CircularProgress } from '@mui/material';
+import { Container, Button } from '@mui/material';
 import { useEffect, useState } from 'react';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import 'swiper/css';
@@ -21,7 +21,8 @@ import { useSession } from 'next-auth/react';
 import { updateUser } from '@/network/user/updateUser';
 import { createBooking } from '@/network/booking/createBooking';
 import { updateRoom } from '@/network/rooms/updateRoom';
-import { useRouter } from 'next/navigation';
+import { redirect, useRouter } from 'next/navigation';
+import Spinner from '@/components/shared/spinner/spinner';
 
 interface IRoomWithPhotoURLs extends Omit<IRoom, 'photos'> {
   photos: string[];
@@ -61,7 +62,13 @@ export default function Rooms() {
       passportSeries: false,
       registrationAddress: false,
     });
-  }, [isModalOpen]);
+
+    setPassportData({
+      passportNumber: session?.data?.user.passportNumber,
+      passportSeries: session?.data?.user.passportSeries,
+      registrationAddress: session?.data?.user.registrationAddress,
+    });
+  }, [isModalOpen, session?.data]);
 
   useEffect(() => {
     const filteredRooms = rooms.filter(
@@ -141,7 +148,7 @@ export default function Rooms() {
         totalPrice: roomInfo.price,
       };
 
-      console.log(bookingData, userId, roomId);
+      console.log(userUpdateData, userId, bookingData);
 
       try {
         await Promise.all([
@@ -160,11 +167,7 @@ export default function Rooms() {
   };
 
   if (loading) {
-    return (
-      <div className="h-1/2 flex items-center justify-center">
-        <CircularProgress color="error" />
-      </div>
-    );
+    return <Spinner />;
   }
 
   return (
@@ -192,8 +195,12 @@ export default function Rooms() {
                   variant="contained"
                   color="error"
                   onClick={() => {
-                    setIsModalOpen(true);
-                    setSelectedRoomType(room.roomType);
+                    if (session.status !== 'authenticated') {
+                      router.push('/auth/login');
+                    } else {
+                      setIsModalOpen(true);
+                      setSelectedRoomType(room.roomType);
+                    }
                   }}
                 >
                   Забронировать
@@ -227,9 +234,7 @@ export default function Rooms() {
       </Container>
       <Modal open={isModalOpen} handleClose={() => setIsModalOpen(false)}>
         {loadingBooking ? (
-          <div className="h-1/2 flex items-center justify-center">
-            <CircularProgress color="error" />
-          </div>
+          <Spinner />
         ) : (
           <LocalizationProvider dateAdapter={AdapterDateFns}>
             <form onSubmit={handleSubmit} className="flex flex-col gap-y-4 items-center">
@@ -243,7 +248,7 @@ export default function Rooms() {
                 type="text"
                 fullWidth
                 label="Номер паспорта"
-                value={passportData.passportNumber || session.data?.user.passportNumber}
+                value={passportData.passportNumber}
                 onChange={(e) =>
                   setPassportData({ ...passportData, passportNumber: e.target.value })
                 }
@@ -316,7 +321,7 @@ export default function Rooms() {
                 variant="contained"
                 color="error"
               >
-                Продолжить
+                Забронировать
               </Button>
             </form>
           </LocalizationProvider>

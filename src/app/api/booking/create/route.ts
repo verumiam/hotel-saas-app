@@ -17,6 +17,6 @@ export const POST = async (request: any, res: any) => {
     await newBooking.save();
     return new NextResponse('Booking created successfully', { status: 200 });
   } catch (error: any) {
-    return res.status(500).json({ message: 'Booking creating failed with error: ' + error });
+    return new NextResponse('Booking creating failed', { status: 500 });
   }
 };

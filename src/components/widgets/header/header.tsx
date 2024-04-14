@@ -23,7 +23,7 @@ export default function Header() {
               <Link href="/rooms">Номера</Link>
             </li>
             <li>
-              <Link href="/">Спецпредложения</Link>
+              <Link href="/special-offers">Спецпредложения</Link>
             </li>
           </ul>
           <div className="flex gap-x-4">

@@ -1,5 +1,6 @@
 'use client';
 
+import Spinner from '@/components/shared/spinner/spinner';
 import useAuth from '@/helpers/auth/auth-hook';
 import { Button, Input, Typography, CircularProgress } from '@mui/material';
 import { useSession } from 'next-auth/react';
@@ -9,11 +10,7 @@ export default function AdminLogin() {
   const { data: session, status } = useSession();
 
   if (loading || status === 'loading') {
-    return (
-      <div className="h-1/2 flex items-center justify-center">
-        <CircularProgress color="error" />
-      </div>
-    );
+    return <Spinner />;
   }
 
   return (
@@ -46,6 +43,11 @@ export default function AdminLogin() {
         {errors.password ? (
           <Typography variant="caption" className="text-red-500">
             {errors.password}
+          </Typography>
+        ) : null}
+        {errors.serverError ? (
+          <Typography variant="caption" className="text-center text-red-500">
+            {errors.serverError}
           </Typography>
         ) : null}
         <Button color="error" variant="contained" onClick={() => onSubmitData('login')}>

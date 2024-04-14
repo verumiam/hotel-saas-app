@@ -1,18 +1,15 @@
 'use client';
 
+import Spinner from '@/components/shared/spinner/spinner';
 import useAuth from '@/helpers/auth/auth-hook';
-import { Button, Input, Typography, CircularProgress } from '@mui/material';
+import { Button, Input, Typography } from '@mui/material';
 import Link from 'next/link';
 
 export default function Register() {
   const { registerData, errors, loading, handleChange, onSubmitData } = useAuth();
 
   if (loading) {
-    return (
-      <div className="h-1/2 flex items-center justify-center">
-        <CircularProgress color="error" />
-      </div>
-    );
+    return <Spinner />;
   }
 
   return (

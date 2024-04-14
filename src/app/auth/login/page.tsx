@@ -1,7 +1,8 @@
 'use client';
 
+import Spinner from '@/components/shared/spinner/spinner';
 import useAuth from '@/helpers/auth/auth-hook';
-import { Button, Input, Typography, CircularProgress } from '@mui/material';
+import { Button, Input, Typography } from '@mui/material';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 
@@ -10,16 +11,12 @@ export default function Login() {
   const { data: session, status } = useSession();
 
   if (loading || status === 'loading') {
-    return (
-      <div className="h-1/2 flex items-center justify-center">
-        <CircularProgress color="error" />
-      </div>
-    );
+    return <Spinner />;
   }
 
   return (
     status !== 'authenticated' && (
-      <div className="h-full mx-auto mt-[120px] w-[400px]">
+      <div className="mx-auto mt-[120px] w-[400px]">
         <Typography
           className="text-center border-b border-gray-200 pb-2 w-full uppercase"
           variant="subtitle1"
@@ -48,6 +45,11 @@ export default function Login() {
           {errors.password ? (
             <Typography variant="caption" className="text-red-500">
               {errors.password}
+            </Typography>
+          ) : null}
+          {errors.serverError ? (
+            <Typography variant="caption" className="text-center text-red-500">
+              {errors.serverError}
             </Typography>
           ) : null}
           <Button color="error" variant="contained" onClick={() => onSubmitData('login')}>

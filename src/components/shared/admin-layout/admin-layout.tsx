@@ -22,7 +22,7 @@ export default function AdminLayout() {
                 Клиенты
               </Typography>
               <Typography>
-                Управление списком клиентов: просмотр, добавление, редактирование и удаление.
+                Управление списком клиентов: просмотр, редактирование и удаление.
               </Typography>
             </CardContent>
             <CardActions>

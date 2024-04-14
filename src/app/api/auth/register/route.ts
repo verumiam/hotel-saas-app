@@ -25,12 +25,15 @@ export const POST = async (request: any, res: any) => {
     password: hashedPassword,
     name,
     lastName,
+    passportNumber: '',
+    passportSeries: '',
+    registrationAddress: '',
   });
 
   try {
     await newUser.save();
     return new NextResponse('User registered and signed in successfully', { status: 200 });
   } catch (error) {
-    return res.status(500).json({ message: 'User registration failed with error: ' + error });
+    return new NextResponse('User registered failed', { status: 500 });
   }
 };

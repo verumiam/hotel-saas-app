@@ -27,20 +27,25 @@ import { useRouter } from 'next/navigation';
 import { getRoomsList } from '@/network/rooms/getRoomsList';
 import deleteRoom from '@/network/rooms/deleteRoom';
 import { IRoom } from '@/models/room';
+import Spinner from '@/components/shared/spinner/spinner';
 
 export default function ManageRooms() {
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
   const [rooms, setRooms] = useState([]);
   const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
   const router = useRouter();
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const fetchRooms = async () => {
+      setLoading(true);
       try {
         const data = await getRoomsList();
         setRooms(data);
       } catch (error) {
         console.error('Ошибка при получении списка номеров:', error);
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -145,16 +150,22 @@ export default function ManageRooms() {
     const selectedRoomIds = Object.keys(rowSelection);
 
     try {
+      setLoading(true);
       await deleteRoom(selectedRoomIds);
-
+    } catch (error) {
+      console.error('Ошибка при удалении номера: ', error);
+    } finally {
       setRooms((currentRooms) =>
         currentRooms.filter((room: IRoom) => !selectedRoomIds.includes(room._id))
       );
       setRowSelection({});
-    } catch (error) {
-      console.error('Ошибка при удалении номера: ', error);
+      setLoading(false);
     }
   };
+
+  if (loading) {
+    return <Spinner />;
+  }
 
   return (
     <Container className="mt-[60px]">

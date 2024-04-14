@@ -1,5 +1,7 @@
-export async function getBookingList(userID: string) {
-  const response = await fetch(`/api/booking/list?userID=${userID}`, {
+import { IBooking } from '@/models/booking';
+
+export async function getBookingList(userId: string | string[]): Promise<IBooking[]> {
+  const response = await fetch(`/api/booking/list`, {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',
@@ -10,5 +12,14 @@ export async function getBookingList(userID: string) {
     throw new Error('Network response was not ok');
   }
 
-  return await response.json();
+  const data: IBooking[] = await response.json();
+  let result;
+
+  if (Array.isArray(userId)) {
+    result = data?.filter((book) => userId.includes(book.userId));
+  } else {
+    result = data?.filter((book) => book.userId === userId);
+  }
+
+  return result;
 }
