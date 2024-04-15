@@ -8,12 +8,8 @@ export async function getBookingList(userId: string | string[]): Promise<IBookin
     },
   });
 
-  if (!response.ok) {
-    throw new Error('Network response was not ok');
-  }
-
   const data: IBooking[] = await response.json();
-  let result;
+  let result: IBooking[] | PromiseLike<IBooking[]>;
 
   if (Array.isArray(userId)) {
     result = data?.filter((book) => userId.includes(book.userId));

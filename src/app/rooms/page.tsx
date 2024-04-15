@@ -1,5 +1,9 @@
 'use client';
 
+import 'swiper/css';
+import 'swiper/css/navigation';
+import 'swiper/css/pagination';
+
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFnsV3';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -7,22 +11,18 @@ import { TextField, Typography } from '@mui/material';
 import { Container, Button } from '@mui/material';
 import { useEffect, useState } from 'react';
 import { Swiper, SwiperSlide } from 'swiper/react';
-import 'swiper/css';
-import 'swiper/css/navigation';
-import 'swiper/css/pagination';
 import { Pagination, Navigation } from 'swiper/modules';
 import Image from 'next/image';
 import { convertBufferImageToBlobURL } from '@/helpers/converter-images';
-import { getRoomsList } from '@/network/rooms/getRoomsList';
 import { IRoom } from '@/models/room';
 import { startOfDay } from 'date-fns';
 import Modal from '@/components/widgets/modal';
 import { useSession } from 'next-auth/react';
 import { updateUser } from '@/network/user/updateUser';
 import { createBooking } from '@/network/booking/createBooking';
-import { updateRoom } from '@/network/rooms/updateRoom';
-import { redirect, useRouter } from 'next/navigation';
+import { updateRoom, getRoomsList } from '@/network/rooms';
 import Spinner from '@/components/shared/spinner/spinner';
+import { useRouter } from 'next/navigation';
 
 interface IRoomWithPhotoURLs extends Omit<IRoom, 'photos'> {
   photos: string[];
@@ -34,7 +34,7 @@ export default function Rooms() {
   const session = useSession();
   const router = useRouter();
   const [rooms, setRooms] = useState<IRoomWithPhotoURLs[]>([]);
-  const [uniqueRooms, setUniqueRooms] = useState<IRoomWithPhotoURLs[]>([]);
+  const [uniqueRooms, setUniqueRooms] = useState<IRoom[]>([]);
   const [loading, setLoading] = useState(false);
   const [loadingBooking, setLoadingBooking] = useState(false);
 
@@ -84,19 +84,22 @@ export default function Rooms() {
         setLoading(true);
         const fetchedRooms = await getRoomsList();
 
-        const roomsWithPhotoUrls = fetchedRooms.map((room: IRoomWithPhotoURLs) => ({
+        const roomsWithPhotoUrls = fetchedRooms.map((room: IRoom) => ({
           ...room,
           photos: convertBufferImageToBlobURL(room.photos),
         }));
 
-        const uniqueRooms: IRoomWithPhotoURLs[] = Object.values(
-          roomsWithPhotoUrls.reduce((acc: Record<string, unknown>, room: IRoomWithPhotoURLs) => {
-            acc[room.roomType] = room;
-            return acc;
-          }, {})
+        const uniqueRooms: IRoom[] = Object.values(
+          roomsWithPhotoUrls.reduce(
+            (acc: IRoom | Record<string, string>, room: IRoomWithPhotoURLs) => {
+              acc[room.roomType] = room;
+              return acc;
+            },
+            {}
+          )
         );
 
-        setRooms(roomsWithPhotoUrls);
+        setRooms(roomsWithPhotoUrls as IRoomWithPhotoURLs[]);
         setUniqueRooms(uniqueRooms);
       } catch (error) {
         console.error('Failed to fetch rooms:', error);
@@ -107,6 +110,23 @@ export default function Rooms() {
 
     fetchRooms();
   }, []);
+
+  useEffect(() => {
+    const days = calculateDaysBetweenDates(checkInDate, checkOutDate);
+    const selectedRoomInfo = availableRooms.find((room) => room.roomNumber === selectedRoom);
+    if (selectedRoomInfo) {
+      const totalPrice = days * selectedRoomInfo.price;
+    }
+  }, [checkInDate, checkOutDate, selectedRoom, availableRooms]);
+
+  const calculateDaysBetweenDates = (startDate: Date | null, endDate: Date | null) => {
+    if (!startDate || !endDate) {
+      return 0;
+    }
+    const start = new Date(startDate).getTime();
+    const end = new Date(endDate).getTime();
+    return Math.round((end - start) / (1000 * 60 * 60 * 24));
+  };
 
   const validateForm = () => {
     const newErrors = {
@@ -145,15 +165,13 @@ export default function Rooms() {
         roomId,
         checkInDate,
         checkOutDate,
-        totalPrice: roomInfo.price,
+        totalPrice: Number(calculateDaysBetweenDates(checkInDate, checkOutDate) * roomInfo.price),
       };
-
-      console.log(userUpdateData, userId, bookingData);
 
       try {
         await Promise.all([
-          updateUser(userUpdateData, userId),
           createBooking(bookingData),
+          updateUser(userUpdateData, userId),
           updateRoom({ occupants: userId, isAvailable: false }, roomId),
         ]);
       } catch (error) {
@@ -218,6 +236,7 @@ export default function Rooms() {
                     <SwiperSlide key={index}>
                       <div style={{ position: 'relative', width: '100%', height: '500px' }}>
                         <Image
+                          // @ts-ignore
                           src={photoUrl}
                           alt={`${room.roomType} photo ${index}`}
                           layout="fill"
@@ -314,6 +333,13 @@ export default function Rooms() {
                 onChange={(newValue) => setCheckOutDate(newValue)}
                 minDate={checkInDate || today}
               />
+              <Typography variant="h6" className="text-center mb-4">
+                Итоговая сумма:
+                {calculateDaysBetweenDates(checkInDate, checkOutDate) *
+                  (availableRooms.find((room) => room.roomNumber === selectedRoom)?.price ||
+                    0)}{' '}
+                ₽
+              </Typography>
               <Button
                 disabled={availableRooms.length <= 0}
                 type="submit"

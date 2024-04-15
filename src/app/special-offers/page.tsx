@@ -1,15 +1,5 @@
 import React from 'react';
-import {
-  Container,
-  Typography,
-  Grid,
-  Card,
-  CardMedia,
-  CardContent,
-  CardActions,
-  Button,
-  Box,
-} from '@mui/material';
+import { Container, Typography, Grid, Card, CardMedia, CardContent, Box } from '@mui/material';
 import Image from 'next/image';
 
 const specialOffers = [
@@ -64,11 +54,6 @@ export default function SpecialOffers() {
                   {offer.description}
                 </Typography>
               </CardContent>
-              <CardActions>
-                <Button color="error" size="small">
-                  Узнать больше
-                </Button>
-              </CardActions>
             </Card>
           </Grid>
         ))}

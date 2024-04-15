@@ -5,8 +5,7 @@ import { IBooking } from '@/models/booking';
 import { IRoom } from '@/models/room';
 import cancelBooking from '@/network/booking/cancelBooking';
 import { getBookingList } from '@/network/booking/getBookingList';
-import { getRoom } from '@/network/rooms/getRoom';
-import { updateRoom } from '@/network/rooms/updateRoom';
+import { getRoom, updateRoom } from '@/network/rooms';
 import {
   Button,
   Checkbox,
@@ -17,7 +16,6 @@ import {
   TableCell,
   TableContainer,
   TableHead,
-  TablePagination,
   TableRow,
   Typography,
 } from '@mui/material';
@@ -25,7 +23,6 @@ import {
   flexRender,
   getCoreRowModel,
   getFilteredRowModel,
-  getPaginationRowModel,
   getSortedRowModel,
   RowSelectionState,
   useReactTable,
@@ -41,7 +38,6 @@ export default function Profile() {
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
   const { data: session } = useSession();
   const [bookings, setBookings] = useState<IEnrichedBooking[]>([]);
-  const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 5 });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -77,25 +73,6 @@ export default function Profile() {
 
     fetchBookingsAndRooms();
   }, [session?.user?.id]);
-
-  const renderPagination = () => {
-    return (
-      <TablePagination
-        component="div"
-        count={bookings.length}
-        page={pagination.pageIndex}
-        labelRowsPerPage="Количество арендованных номеров"
-        labelDisplayedRows={({ from, to, count }) => `Страница ${from} из ${count}`}
-        onPageChange={(event, newPage) => {
-          setPagination((old) => ({ ...old, pageIndex: newPage }));
-        }}
-        rowsPerPage={pagination.pageSize}
-        onRowsPerPageChange={(event) => {
-          setPagination((old) => ({ ...old, pageSize: parseInt(event.target.value, 10) }));
-        }}
-      />
-    );
-  };
 
   const handleLogout = async () => {
     await signOut({
@@ -149,24 +126,17 @@ export default function Profile() {
     []
   );
 
-  console.log(rowSelection);
-
   const tableInstance = useReactTable({
     data: bookings,
+    state: {
+      rowSelection,
+    },
     getRowId: (row: any) => row._id,
     columns,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
     onRowSelectionChange: setRowSelection,
-    state: {
-      rowSelection,
-      pagination,
-    },
-    onPaginationChange: setPagination,
-    manualPagination: true,
-    pageCount: Math.ceil(bookings.length / pagination.pageSize),
   });
 
   const handleCancelBooking = async () => {
@@ -254,7 +224,6 @@ export default function Profile() {
             </TableBody>
           </Table>
         </TableContainer>
-        {renderPagination()}
       </Paper>
     </Container>
   );

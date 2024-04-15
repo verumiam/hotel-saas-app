@@ -10,15 +10,14 @@ import {
   TableRow,
   Paper,
   Checkbox,
-  TablePagination,
   Button,
+  Typography,
 } from '@mui/material';
 import {
   useReactTable,
   getCoreRowModel,
   getSortedRowModel,
   flexRender,
-  getPaginationRowModel,
   getFilteredRowModel,
   RowSelectionState,
 } from '@tanstack/react-table';
@@ -30,13 +29,13 @@ import { getBookingList } from '@/network/booking/getBookingList';
 import cancelBookings from '@/network/booking/cancelBooking';
 import { IBooking } from '@/models/booking';
 import { IRoom } from '@/models/room';
-import { getRoomsList } from '@/network/rooms/getRoomsList';
-import { updateRoom } from '@/network/rooms/updateRoom';
+import { getRoomsList, updateRoom } from '@/network/rooms';
+import { useRouter } from 'next/navigation';
 
 export default function ClientsManage() {
   const [users, setUsers] = useState<IUser[]>([]);
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
-  const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
+  const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -102,31 +101,13 @@ export default function ClientsManage() {
     columns,
     state: {
       rowSelection,
-      pagination,
     },
     getRowId: (row) => row._id,
     onRowSelectionChange: setRowSelection,
-    onPaginationChange: setPagination,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    manualPagination: true,
-    pageCount: Math.ceil(users.length / pagination.pageSize),
   });
-
-  const renderPagination = () => (
-    <TablePagination
-      component="div"
-      count={users.length}
-      page={pagination.pageIndex}
-      onPageChange={(event, newPage) => setPagination((old) => ({ ...old, pageIndex: newPage }))}
-      rowsPerPage={pagination.pageSize}
-      onRowsPerPageChange={(event) =>
-        setPagination((old) => ({ ...old, pageSize: parseInt(event.target.value, 10) }))
-      }
-    />
-  );
 
   const handleDeleteSelectedUsers = async () => {
     const selectedClientIds = Object.keys(rowSelection);
@@ -140,15 +121,21 @@ export default function ClientsManage() {
         (room) => room.occupants && selectedClientIds.includes(room.occupants.toString())
       );
 
-      await Promise.all([
+      const response = await Promise.all([
         ...selectedClientIds.map((_id) => deleteUser(_id)),
         ...bookingForDeleting.map((booking) => cancelBookings(booking._id)),
         ...roomsToUpdate.map((room) =>
           updateRoom({ isAvailable: true, occupants: [] }, room._id.toString())
         ),
       ]);
+
+      if (response[0].status === 200) {
+        setUsers((prevUsers) => prevUsers.filter((user) => !selectedClientIds.includes(user._id)));
+        setRowSelection({});
+      }
     } catch (error) {
       console.error(error);
+      setError('Произошла ошибка при попытке удалить пользователя');
     } finally {
       setLoading(false);
     }
@@ -159,9 +146,9 @@ export default function ClientsManage() {
   }
 
   return (
-    <Container className="mt-[60px]">
+    <Container className="my-[60px]">
       <span className="text-[24px]">Управление клиентами</span>
-      <div className="flex gap-x-3 my-5">
+      <div className="flex gap-x-3 my-5 gap-y-1">
         <Button
           variant="contained"
           color="error"
@@ -170,6 +157,11 @@ export default function ClientsManage() {
         >
           Удалить выбранных клиентов
         </Button>
+        {error ?? (
+          <Typography variant="caption" color="error">
+            {error}
+          </Typography>
+        )}
       </div>
       <Paper sx={{ my: 4 }}>
         <Table>
@@ -198,7 +190,6 @@ export default function ClientsManage() {
             ))}
           </TableBody>
         </Table>
-        {renderPagination()}
       </Paper>
     </Container>
   );

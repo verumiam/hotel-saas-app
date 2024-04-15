@@ -39,15 +39,15 @@ const UserSchema = new Schema(
     },
     passportNumber: {
       type: String,
-      required: true,
+      default: '',
     },
     passportSeries: {
       type: String,
-      required: true,
+      default: '',
     },
     registrationAddress: {
       type: String,
-      required: true,
+      default: '',
     },
   },
   { timestamps: true }

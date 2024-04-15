@@ -1,4 +1,6 @@
-export async function getRoomsList() {
+import { IRoom } from '@/models/room';
+
+export default async function getRoomsList(): Promise<IRoom[]> {
   const response = await fetch(`/api/rooms/list`, {
     method: 'GET',
     headers: {
@@ -6,9 +8,5 @@ export async function getRoomsList() {
     },
   });
 
-  if (!response.ok) {
-    throw new Error('Network response was not ok');
-  }
-
-  return await response.json();
+  return response.json();
 }

@@ -7,9 +7,5 @@ export async function createBooking(bookingData: Record<string, unknown>) {
     body: JSON.stringify(bookingData),
   });
 
-  if (!response.ok) {
-    throw new Error('Failed to create a new booking');
-  }
-
-  return response.json();
+  return response;
 }

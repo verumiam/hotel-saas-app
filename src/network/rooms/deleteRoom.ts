@@ -7,9 +7,5 @@ export default async function deleteRoom(selectedRoomIds: string | string[]) {
     body: JSON.stringify({ ids: selectedRoomIds }),
   });
 
-  if (!response.ok) {
-    throw new Error('Произошла ошибка при удалении номера.');
-  }
-
-  return await response.json();
+  return response;
 }

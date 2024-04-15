@@ -19,58 +19,30 @@ import {
 import Image from 'next/image';
 import { useSearchParams } from 'next/navigation';
 import DeleteIcon from '@mui/icons-material/Delete';
-import { useRouter } from 'next/navigation';
 import { convertBufferImageToBlobURL, convertFileImageToBuffer } from '@/helpers/converter-images';
-import { getRoom } from '@/network/rooms/getRoom';
-import { updateRoom } from '@/network/rooms/updateRoom';
-import { createRoom } from '@/network/rooms/createRoom';
-
-const roomTypes = [
-  'Делюкс с двуспальной кроватью',
-  'Делюкс с двумя односпальными кроватями',
-  'Делюкс с двуспальной кроватью с видом на город',
-  'Двухкомнатный полулюкс',
-  'Двухкомнатные апартаменты с одной спальней',
-  'Трехкомнатные апартаменты с одной спальней',
-  'Семейные апартаменты с двумя спальнями',
-  'Президентский люкс',
-];
-
-const possibleAmenities = [
-  'Wi-Fi',
-  'Телевизор',
-  'Кондиционер',
-  'Мини-бар',
-  'Кухня',
-  'Кофемашина',
-  'Гостевой санузел',
-  'Ванная и душевая',
-  'Джакузи',
-  'Вид на центр города',
-];
+import { getRoom, updateRoom, createRoom } from '@/network/rooms';
+import { roomTypes, possibleAmenities } from '@/constants';
 
 export default function RoomEditPage({ params }: { params: { id: string } }) {
   const searchParams = useSearchParams();
-  const router = useRouter();
-
-  const [roomNumber, setRoomNumber] = useState('');
-  const [roomType, setRoomType] = useState('');
-  const [price, setPrice] = useState('');
-  const [capacity, setCapacity] = useState('');
-  const [amenities, setAmenities] = useState<string[]>([]);
-  const [isAvailable, setIsAvailable] = useState(false);
-  const [description, setDescription] = useState('');
-  const [squareMeters, setSquareMeters] = useState('');
-  const [numberOfRooms, setNumberOfRooms] = useState('');
-
-  const [singleBeds, setSingleBeds] = useState(0);
-  const [doubleBeds, setDoubleBeds] = useState(0);
-  const [sofas, setSofas] = useState(0);
+  const [roomData, setRoomData] = useState({
+    roomNumber: '',
+    roomType: '',
+    price: '',
+    capacity: '',
+    amenities: [],
+    isAvailable: false,
+    description: '',
+    squareMeters: '',
+    numberOfRooms: '',
+    singleBeds: 0,
+    doubleBeds: 0,
+    sofas: 0,
+  });
 
   const [photos, setPhotos] = useState<File[]>([]);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [existingPhotos, setExistingPhotos] = useState<Buffer[]>([]);
-
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -80,18 +52,17 @@ export default function RoomEditPage({ params }: { params: { id: string } }) {
         try {
           const room = await getRoom(params.id);
 
-          setRoomNumber(room.roomNumber);
-          setRoomType(room.roomType);
-          setPrice(room.price.toString());
-          setCapacity(room.capacity.toString());
-          setAmenities(room.amenities);
-          setIsAvailable(room.isAvailable);
-          setDescription(room.description);
-          setSquareMeters(room.squareMeters.toString());
-          setNumberOfRooms(room.numberOfRooms.toString());
-          setSingleBeds(room.singleBeds);
-          setDoubleBeds(room.doubleBeds);
-          setSofas(room.sofas);
+          setRoomData({
+            ...roomData,
+            ...room,
+            price: room.price.toString(),
+            capacity: room.capacity.toString(),
+            squareMeters: room.squareMeters.toString(),
+            numberOfRooms: room.numberOfRooms.toString(),
+            singleBeds: room.singleBeds,
+            doubleBeds: room.doubleBeds,
+            sofas: room.sofas,
+          });
           setExistingPhotos(room.photos);
 
           if (room.photos && room.photos.length > 0) {
@@ -113,12 +84,21 @@ export default function RoomEditPage({ params }: { params: { id: string } }) {
     };
   }, [params.id, searchParams]);
 
+  const handleChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setRoomData((prev) => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value,
+    }));
+  };
+
   const handleAmenityChange = (amenity: string) => {
-    if (amenities.includes(amenity)) {
-      setAmenities(amenities.filter((a) => a !== amenity));
-    } else {
-      setAmenities([...amenities, amenity]);
-    }
+    setRoomData((prev) => ({
+      ...prev,
+      amenities: prev.amenities.includes(amenity)
+        ? prev.amenities.filter((a) => a !== amenity)
+        : [...prev.amenities, amenity],
+    }));
   };
 
   const handleRemovePhoto = (index: number) => {
@@ -128,16 +108,9 @@ export default function RoomEditPage({ params }: { params: { id: string } }) {
   };
 
   const handlePhotoChange = (newFiles: File[]) => {
-    const fileArray = Array.from(newFiles);
-
-    const updatedPhotos = [...photos, ...fileArray];
+    const updatedPhotos = [...photos, ...Array.from(newFiles)];
     setPhotos(updatedPhotos);
-
-    const updatedPreviewUrls = [
-      ...previewUrls,
-      ...fileArray.map((file) => URL.createObjectURL(file)),
-    ];
-    setPreviewUrls(updatedPreviewUrls);
+    setPreviewUrls([...previewUrls, ...Array.from(newFiles).map(URL.createObjectURL)]);
   };
 
   const handleSubmit = async (e: FormEvent<unknown>) => {
@@ -146,28 +119,27 @@ export default function RoomEditPage({ params }: { params: { id: string } }) {
 
     const photosBuffers = await Promise.all(photos.map((file) => convertFileImageToBuffer(file)));
 
-    const roomData: Record<string, unknown> = {
-      roomNumber,
+    const data: Record<string, unknown> = {
+      roomNumber: roomData.roomNumber,
       photos: existingPhotos ? [...existingPhotos, ...photosBuffers] : photosBuffers,
-      roomType,
-      price: Number(price),
-      capacity: Number(capacity),
-      singleBeds: Number(singleBeds),
-      doubleBeds: Number(doubleBeds),
-      sofas: Number(sofas),
-      squareMeters: Number(squareMeters),
-      numberOfRooms: Number(numberOfRooms),
-      amenities,
-      isAvailable,
-      description,
+      roomType: roomData.roomType,
+      price: Number(roomData.price),
+      capacity: Number(roomData.capacity),
+      singleBeds: Number(roomData.singleBeds),
+      doubleBeds: Number(roomData.doubleBeds),
+      sofas: Number(roomData.sofas),
+      squareMeters: Number(roomData.squareMeters),
+      numberOfRooms: Number(roomData.numberOfRooms),
+      amenities: roomData.amenities,
+      isAvailable: roomData.isAvailable,
+      description: roomData.description,
     };
 
     try {
       if (searchParams.get('mode') === 'edit') {
-        await updateRoom(roomData, params.id);
+        await updateRoom(data, params.id);
       } else {
-        await createRoom(roomData);
-        router.push('/admin/manage/rooms');
+        await createRoom(data);
       }
     } catch (error) {
       console.error('Error saving room:', error);
@@ -188,7 +160,7 @@ export default function RoomEditPage({ params }: { params: { id: string } }) {
     <Container maxWidth="sm">
       <Typography variant="h4" component="h1" gutterBottom>
         {searchParams.get('mode') === 'edit'
-          ? `Редактирование номера: ${roomNumber}`
+          ? `Редактирование номера: ${roomData.roomNumber}`
           : 'Создание нового номера'}
       </Typography>
       <form className="mb-5" onSubmit={handleSubmit}>
@@ -223,66 +195,81 @@ export default function RoomEditPage({ params }: { params: { id: string } }) {
           ))}
         </Box>
         <MuiFileInput
-          className="w-full"
           value={photos}
-          multiple
           placeholder="Прикрепить фотографии номера"
+          className="w-full"
+          multiple
           inputProps={{ accept: '.png, .jpeg, .jpg, .webp' }}
+          required={!photos || !existingPhotos}
           onChange={handlePhotoChange}
         />
         <TextField
-          fullWidth
+          value={roomData.squareMeters}
           label="Квадратура номера (кв. м)"
+          name="squareMeters"
+          fullWidth
           type="number"
-          value={squareMeters}
-          onChange={(e) => setSquareMeters(e.target.value)}
           margin="normal"
+          required
+          onChange={handleChange}
         />
         <TextField
-          fullWidth
+          value={roomData.numberOfRooms}
           label="Количество комнат"
+          name="numberOfRooms"
+          fullWidth
           type="number"
-          value={numberOfRooms}
-          onChange={(e) => setNumberOfRooms(e.target.value)}
           margin="normal"
+          required
+          onChange={handleChange}
         />
         <TextField
-          fullWidth
+          value={roomData.singleBeds}
           label="Односпальных кроватей"
+          name="singleBeds"
+          fullWidth
           type="number"
-          value={singleBeds}
-          onChange={(e) => setSingleBeds(Number(e.target.value))}
           margin="normal"
+          required
+          onChange={handleChange}
         />
         <TextField
-          fullWidth
+          value={roomData.doubleBeds}
           label="Двуспальных кроватей"
+          name="doubleBeds"
+          fullWidth
           type="number"
-          value={doubleBeds}
-          onChange={(e) => setDoubleBeds(Number(e.target.value))}
           margin="normal"
+          required
+          onChange={handleChange}
         />
         <TextField
-          fullWidth
+          value={roomData.sofas}
           label="Диванов"
+          name="sofas"
+          fullWidth
           type="number"
-          value={sofas}
-          onChange={(e) => setSofas(Number(e.target.value))}
           margin="normal"
+          required
+          onChange={handleChange}
         />
         <TextField
-          fullWidth
+          value={roomData.roomNumber}
           label="Номер комнаты"
-          value={roomNumber}
-          onChange={(e) => setRoomNumber(e.target.value)}
+          name="roomNumber"
+          fullWidth
           margin="normal"
+          required
+          onChange={handleChange}
         />
         <Select
+          value={roomData.roomType}
+          name="roomType"
           fullWidth
-          value={roomType}
-          onChange={(e) => setRoomType(e.target.value)}
           displayEmpty
           inputProps={{ 'aria-label': 'Without label' }}
+          required
+          onChange={handleChange}
         >
           <MenuItem disabled value="">
             Выберите тип комнаты
@@ -294,20 +281,24 @@ export default function RoomEditPage({ params }: { params: { id: string } }) {
           ))}
         </Select>
         <TextField
-          fullWidth
+          value={roomData.price}
           label="Цена"
+          name="price"
+          fullWidth
           type="number"
-          value={price}
-          onChange={(e) => setPrice(e.target.value)}
           margin="normal"
+          required
+          onChange={handleChange}
         />
         <TextField
-          fullWidth
+          value={roomData.capacity}
           label="Вместимость"
+          name="capacity"
+          fullWidth
           type="number"
-          value={capacity}
-          onChange={(e) => setCapacity(e.target.value)}
           margin="normal"
+          required
+          onChange={handleChange}
         />
         <FormGroup>
           {possibleAmenities.map((amenity) => (
@@ -315,7 +306,7 @@ export default function RoomEditPage({ params }: { params: { id: string } }) {
               key={amenity}
               control={
                 <Checkbox
-                  checked={amenities.includes(amenity)}
+                  checked={roomData.amenities.includes(amenity)}
                   onChange={() => handleAmenityChange(amenity)}
                 />
               }
@@ -325,18 +316,20 @@ export default function RoomEditPage({ params }: { params: { id: string } }) {
         </FormGroup>
         <FormControlLabel
           control={
-            <Checkbox checked={isAvailable} onChange={(e) => setIsAvailable(e.target.checked)} />
+            <Checkbox name="isAvailable" checked={roomData.isAvailable} onChange={handleChange} />
           }
           label="Доступность"
         />
         <TextField
-          fullWidth
+          value={roomData.description}
           label="Описание"
+          name="description"
+          fullWidth
           multiline
           rows={4}
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
           margin="normal"
+          required
+          onChange={handleChange}
         />
         <Button type="submit" variant="contained" color="error" className="w-full mt-5">
           Сохранить изменения

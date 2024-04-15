@@ -7,9 +7,5 @@ export default async function deleteUser(selectedUserIds: string | string[]) {
     body: JSON.stringify({ ids: selectedUserIds }),
   });
 
-  if (!response.ok) {
-    throw new Error('Произошла ошибка при удалении клиента.');
-  }
-
-  return await response.json();
+  return response;
 }

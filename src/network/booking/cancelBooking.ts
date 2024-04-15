@@ -7,9 +7,5 @@ export default async function cancelBookings(selectedBookingIds: string | string
     body: JSON.stringify({ ids: selectedBookingIds }),
   });
 
-  if (!response.ok) {
-    throw new Error('Произошла ошибка при отмене бронирования.');
-  }
-
-  return await response.json();
+  return response;
 }

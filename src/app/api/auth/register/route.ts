@@ -12,25 +12,22 @@ export const POST = async (request: any, res: any) => {
 
   await connect();
 
-  const existingUser = await User.findOne({ email });
-
-  if (existingUser) {
-    return new NextResponse('User with this email already exists', { status: 400 });
-  }
-
-  const hashedPassword = await bcrypt.hash(password, 5);
-
-  const newUser: IUser = new User({
-    email,
-    password: hashedPassword,
-    name,
-    lastName,
-    passportNumber: '',
-    passportSeries: '',
-    registrationAddress: '',
-  });
-
   try {
+    const existingUser = await User.findOne({ email });
+
+    if (existingUser) {
+      return new NextResponse('User with this email already exists', { status: 400 });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 5);
+
+    const newUser: IUser = new User({
+      email,
+      password: hashedPassword,
+      name,
+      lastName,
+    });
+
     await newUser.save();
     return new NextResponse('User registered and signed in successfully', { status: 200 });
   } catch (error) {

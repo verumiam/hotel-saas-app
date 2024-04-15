@@ -11,7 +11,6 @@ import {
   TableRow,
   Paper,
   Checkbox,
-  TablePagination,
 } from '@mui/material';
 import {
   useReactTable,
@@ -19,12 +18,10 @@ import {
   getSortedRowModel,
   flexRender,
   getFilteredRowModel,
-  getPaginationRowModel,
   RowSelectionState,
-  Row,
 } from '@tanstack/react-table';
 import { useRouter } from 'next/navigation';
-import { getRoomsList } from '@/network/rooms/getRoomsList';
+import { getRoomsList } from '@/network/rooms';
 import deleteRoom from '@/network/rooms/deleteRoom';
 import { IRoom } from '@/models/room';
 import Spinner from '@/components/shared/spinner/spinner';
@@ -32,13 +29,11 @@ import Spinner from '@/components/shared/spinner/spinner';
 export default function ManageRooms() {
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
   const [rooms, setRooms] = useState([]);
-  const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
   const router = useRouter();
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchRooms = async () => {
-      setLoading(true);
       try {
         const data = await getRoomsList();
         setRooms(data);
@@ -116,49 +111,31 @@ export default function ManageRooms() {
     columns,
     state: {
       rowSelection,
-      pagination,
     },
     getRowId: (row: any) => row._id,
     onRowSelectionChange: setRowSelection,
-    onPaginationChange: setPagination,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
     enableRowSelection: true,
     enableMultiRowSelection: true,
-    manualPagination: true,
-    pageCount: Math.ceil(rooms.length / pagination.pageSize),
   });
-
-  const renderPagination = () => (
-    <TablePagination
-      component="div"
-      labelRowsPerPage="Количество номеров"
-      count={rooms.length}
-      page={pagination.pageIndex}
-      onPageChange={(_, newPage) => setPagination((prev) => ({ ...prev, pageIndex: newPage }))}
-      rowsPerPage={pagination.pageSize}
-      labelDisplayedRows={({ from, to, count }) => `Страница ${from} из ${count}`}
-      onRowsPerPageChange={(event) =>
-        setPagination((prev) => ({ ...prev, pageSize: parseInt(event.target.value, 10) }))
-      }
-    />
-  );
 
   const handleDeleteRoom = async () => {
     const selectedRoomIds = Object.keys(rowSelection);
 
     try {
       setLoading(true);
-      await deleteRoom(selectedRoomIds);
+      const response = await deleteRoom(selectedRoomIds);
+      if (response.status === 200) {
+        setRooms((currentRooms) =>
+          currentRooms.filter((room: IRoom) => !selectedRoomIds.includes(room._id))
+        );
+        setRowSelection({});
+      }
     } catch (error) {
       console.error('Ошибка при удалении номера: ', error);
     } finally {
-      setRooms((currentRooms) =>
-        currentRooms.filter((room: IRoom) => !selectedRoomIds.includes(room._id))
-      );
-      setRowSelection({});
       setLoading(false);
     }
   };
@@ -168,7 +145,7 @@ export default function ManageRooms() {
   }
 
   return (
-    <Container className="mt-[60px]">
+    <Container className="my-[60px]">
       <span className="text-[24px]">Управление номерами</span>
       <div className="flex gap-x-3 my-5">
         <Button
@@ -224,7 +201,6 @@ export default function ManageRooms() {
             ))}
           </TableBody>
         </Table>
-        {renderPagination()}
       </Paper>
     </Container>
   );

@@ -1,4 +1,4 @@
-export async function updateRoom(roomData: Record<string, unknown>, id: string) {
+export default async function updateRoom(roomData: Record<string, unknown>, id: string) {
   const response = await fetch(`/api/rooms/update`, {
     method: 'PUT',
     headers: {
@@ -6,10 +6,6 @@ export async function updateRoom(roomData: Record<string, unknown>, id: string) 
     },
     body: JSON.stringify({ room: roomData, id }),
   });
-
-  if (!response.ok) {
-    throw new Error('Failed to update the room');
-  }
 
   return response.json();
 }

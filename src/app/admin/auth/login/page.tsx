@@ -2,7 +2,7 @@
 
 import Spinner from '@/components/shared/spinner/spinner';
 import useAuth from '@/helpers/auth/auth-hook';
-import { Button, Input, Typography, CircularProgress } from '@mui/material';
+import { Button, Input, Typography } from '@mui/material';
 import { useSession } from 'next-auth/react';
 
 export default function AdminLogin() {

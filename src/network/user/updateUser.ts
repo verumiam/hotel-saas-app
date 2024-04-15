@@ -7,9 +7,5 @@ export async function updateUser(userData: Record<string, unknown>, id: string) 
     body: JSON.stringify({ user: userData, id }),
   });
 
-  if (!response.ok) {
-    throw new Error('Failed to update the user');
-  }
-
-  return response.json();
+  return response;
 }

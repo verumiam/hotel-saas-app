@@ -1,4 +1,6 @@
-export async function getUserList() {
+import { IUser } from '@/models/user';
+
+export async function getUserList(): Promise<IUser[]> {
   const response = await fetch(`/api/user/list`, {
     method: 'GET',
     headers: {
@@ -6,9 +8,5 @@ export async function getUserList() {
     },
   });
 
-  if (!response.ok) {
-    throw new Error('Network response was not ok');
-  }
-
-  return await response.json();
+  return response.json();
 }

@@ -1,4 +1,4 @@
-export async function createRoom(roomData: Record<string, unknown>) {
+export default async function createRoom(roomData: Record<string, unknown>) {
   const response = await fetch(`/api/rooms/create`, {
     method: 'POST',
     headers: {
@@ -7,7 +7,5 @@ export async function createRoom(roomData: Record<string, unknown>) {
     body: JSON.stringify(roomData),
   });
 
-  if (!response.ok) {
-    throw new Error('Failed to create a new room');
-  }
+  return response;
 }
