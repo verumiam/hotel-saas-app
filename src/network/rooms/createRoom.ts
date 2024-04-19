@@ -1,3 +1,5 @@
+'use client';
+
 export default async function createRoom(roomData: Record<string, unknown>) {
   const response = await fetch(`/api/rooms/create`, {
     method: 'POST',

@@ -1,3 +1,5 @@
+'use client';
+
 import { IBooking } from '@/models/booking';
 
 export async function getBookingList(userId: string | string[]): Promise<IBooking[]> {

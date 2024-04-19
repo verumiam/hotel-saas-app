@@ -1,3 +1,5 @@
+'use client';
+
 export async function createBooking(bookingData: Record<string, unknown>) {
   const response = await fetch(`/api/booking/create`, {
     method: 'POST',

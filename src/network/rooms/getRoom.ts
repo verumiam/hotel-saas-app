@@ -1,3 +1,5 @@
+'use client';
+
 import { IRoom } from '@/models/room';
 
 export default async function getRoom(id: string): Promise<IRoom> {

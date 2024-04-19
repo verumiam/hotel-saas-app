@@ -1,3 +1,5 @@
+'use client';
+
 export default async function deleteUser(selectedUserIds: string | string[]) {
   const response = await fetch(`/api/user/delete`, {
     method: 'DELETE',

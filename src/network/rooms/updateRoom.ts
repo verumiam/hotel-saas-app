@@ -1,3 +1,5 @@
+'use client';
+
 export default async function updateRoom(roomData: Record<string, unknown>, id: string) {
   const response = await fetch(`/api/rooms/update`, {
     method: 'PUT',

@@ -1,3 +1,5 @@
+'use client'
+
 export default async function cancelBookings(selectedBookingIds: string | string[]) {
   const response = await fetch(`/api/booking/cancel`, {
     method: 'DELETE',

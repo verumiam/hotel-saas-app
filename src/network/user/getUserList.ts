@@ -1,3 +1,5 @@
+'use client';
+
 import { IUser } from '@/models/user';
 
 export async function getUserList(): Promise<IUser[]> {

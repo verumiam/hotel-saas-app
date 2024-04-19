@@ -1,3 +1,5 @@
+'use client';
+
 export async function updateUser(userData: Record<string, unknown>, id: string) {
   const response = await fetch(`/api/user/update`, {
     method: 'PUT',
